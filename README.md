@@ -4,7 +4,7 @@
 ## 📖 Tổng quan dự án
 Dự án giả lập toàn diện một cuộc tấn công mạng từ khâu xâm nhập (Initial Access), leo thang đặc quyền (Privilege Escalation), khai thác sâu (Post-Exploitation), cho đến khâu điều tra, xử lý sự cố (Incident Response) bằng Wazuh SIEM và tự động hóa quy trình phân tích mối đe dọa qua SOAR (Shuffle).
 
-* **Hồ sơ kỹ thuật chi tiết (Step-by-step cấu hình):** Vui lòng xem file `SOAR_SOC.docx` trong thư mục `docs/`.
+* **Hồ sơ kỹ thuật chi tiết (Step-by-step cấu hình):** Vui lòng xem file `SOC_SOAR.docx` trong thư mục `docs/`.
 
 ---
 
