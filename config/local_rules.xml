@@ -1,0 +1,106 @@
+<group name="soc_killchain_correlation,">
+
+  <rule id="100101" level="5">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.image" type="pcre2">(?i)(mshta|wscript|cscript|powershell|pwsh|cmd|rundll32|regsvr32)\.exe|(?i)(Temp|Downloads|AppData|ProgramData|Public)</field>
+    <description>Info: Suspicious payload execution (Script Engine or Risky Folder)</description>
+  </rule>
+
+  <rule id="100102" level="5">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(whoami|systeminfo|ipconfig|net(\.exe)?\s+(user|localgroup|group)|arp(\.exe)?\s+-a|route(\.exe)?\s+print|tasklist)</field>
+    <description>Info: System reconnaissance command executed</description>
+  </rule>
+
+  <rule id="100103" level="5">
+    <if_group>sysmon_event3</if_group>
+    <field name="win.eventdata.image" type="pcre2">(?i)(mshta|wscript|cscript|powershell|pwsh|cmd|rundll32|regsvr32)\.exe|(?i)(Temp|Downloads|AppData|ProgramData|Public)</field>
+    <description>Info: Outbound network connection from suspicious process</description>
+  </rule>
+
+  <rule id="100105" level="3">
+    <if_sid>100103</if_sid>
+    <field name="win.eventdata.destinationIp">192\.168\.175\.132</field>
+    <description>Ignore UI: Sliver C2 Beaconing</description>
+  </rule>
+
+  <rule id="100104" level="5">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(schtasks(\.exe)?.*?/create|reg(\.exe)?.*?add.*?HKCU|reg(\.exe)?.*?add.*?HKLM|net(\.exe)?.*?user.*?/add)</field>
+    <description>Info: System persistence or account creation detected</description>
+  </rule>
+
+  <rule id="100501" level="15" timeframe="120" ignore="300">
+    <if_sid>100105</if_sid>                 
+    <if_matched_sid>100101</if_matched_sid> 
+    <description>CRITICAL ALERT: Reverse Shell / C2 Beaconing Established</description>
+    <mitre><id>T1059</id><id>T1071</id></mitre>
+  </rule>
+
+  <rule id="100502" level="12" timeframe="120" ignore="60">
+    <if_sid>100102</if_sid>                 
+    <if_matched_sid>100101</if_matched_sid> 
+    <description>HIGH ALERT: Attacker is performing System Discovery post-compromise</description>
+    <mitre><id>T1087</id></mitre>
+  </rule>
+
+  <rule id="100503" level="14" timeframe="120" ignore="300">
+    <if_sid>100104</if_sid>                 
+    <if_matched_sid>100101</if_matched_sid> 
+    <description>CRITICAL ALERT: Persistence established by Attacker (Task/Registry/User)</description>
+    <mitre><id>T1053</id><id>T1547</id><id>T1136</id></mitre>
+  </rule>
+
+  <rule id="100504" level="13" frequency="5" timeframe="60" ignore="120">
+    <if_matched_sid>100102</if_matched_sid>
+    <description>CRITICAL ALERT: Suspicious System Command Enumeration (Noisy Reconnaissance)</description>
+    <mitre><id>T1087</id><id>T1049</id></mitre>
+  </rule>
+  
+  <rule id="100106" level="7">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.image" type="pcre2">(?i)sqlite3\.exe</field>
+    <field name="win.eventdata.currentDirectory" type="pcre2">(?i)(Temp|Downloads|AppData|Public)</field>
+    <description>Suspicious tool execution: sqlite3.exe run from temporary directory</description>
+    <mitre><id>T1105</id></mitre>
+  </rule>
+
+  <rule id="100107" level="9">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)sqlite3\.exe.*?(plum\.sqlite|plum_test\.db|plum_thuc\.db)</field>
+    <description>Credential Harvesting: Accessing Sticky Notes database via sqlite3</description>
+    <mitre><id>T1005</id><id>T1555</id></mitre>
+  </rule>
+
+  <rule id="100108" level="6">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(dir|Get-ChildItem).*?(\.sqlite|\.kdbx)</field>
+    <description>Data Discovery: Attacker searching for database or password vault files</description>
+    <mitre><id>T1083</id></mitre>
+  </rule>
+
+  <rule id="100109" level="7">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.commandLine" type="pcre2">(?i)(copy|cp|Move-Item).*?(\.sqlite|\.kdbx)</field>
+    <description>Collection: Copying credential database for offline parsing</description>
+    <mitre><id>T1005</id></mitre>
+  </rule>
+
+  <rule id="100505" level="14" timeframe="180" ignore="120">
+    <if_sid>100105</if_sid>
+    <if_matched_sid>100107</if_matched_sid>
+    <description>CRITICAL ALERT: Credential Harvesting and Exfiltration Correlated over C2 Channel</description>
+    <mitre><id>T1555</id><id>T1041</id></mitre>
+  </rule>
+
+  <rule id="100506" level="15" timeframe="300" ignore="300">
+    <if_sid>100107</if_sid>
+    <if_matched_sid>100101</if_matched_sid>
+    <if_matched_sid>100108</if_matched_sid>
+    <if_matched_sid>100109</if_matched_sid>
+    <description>CRITICAL ALERT: Multi-Stage Credential Theft Kill Chain Detected (Discovery -> Collection -> Parse)</description>
+    <mitre><id>T1083</id><id>T1005</id><id>T1555</id></mitre>
+  </rule>
+  
+  
+</group>
